@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Acute Ischaemic Stroke Decision Algorithm</title>
+    <meta name="description" content="Evidence-based clinical decision tool for acute ischemic stroke management, including IV thrombolysis and mechanical thrombectomy decisions">
+    <meta name="keywords" content="acute ischaemic stroke, stroke algorithm, thrombolysis, thrombectomy, clinical decision, NIHSS, ASPECTS">
+    <meta name="author" content="Clinical Decision Tools">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dcicantab5.github.io/strokethrombolysis/">
+    <meta property="og:title" content="Acute Ischaemic Stroke Decision Algorithm">
+    <meta property="og:description" content="Evidence-based tool for acute stroke treatment decisions based on current guidelines">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Acute Ischaemic Stroke Decision Algorithm">
+    <meta property="twitter:description" content="Evidence-based tool for acute stroke treatment decisions">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50' x='50' text-anchor='middle' font-size='50'>🧠</text></svg>">
+    
+    <!-- React and Babel for development -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f9fafb;
+            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        #root {
+            min-height: 100vh;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Loading animation */
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .5;
+            }
+        }
+    </style>
+</head>
+
+<!-- Google tag (gtag.js) - Replace with your Google Analytics ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+    
+<body>
+    <div id="root">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+                <div class="animate-pulse">
+                    <svg className="w-16 h-16 mx-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                </div>
+                <p class="mt-4 text-gray-600">Loading Stroke Decision Algorithm...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+
+        // Icon Components
+        const AlertCircle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const Clock = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const CheckCircle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const XCircle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const ChevronRight = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+        );
+
+        const RefreshCw = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        );
+
+        const FileText = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        );
+
+        const Activity = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+        );
+
+        const Github = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+        );
+
+        const StrokeDecisionAlgorithm = () => {
+            const [currentStep, setCurrentStep] = useState('initial');
+            const [patientData, setPatientData] = useState({
+                hasStrokeSymptoms: null,
+                lkwTime: '',
+                timeSinceOnset: null,
+                nihssScore: '',
+                bloodGlucose: '',
+                ncctDone: null,
+                hasICH: null,
+                ctaDone: null,
+                hasLVO: null,
+                vesselLocation: '',
+                aspectsScore: '',
+                contraindications: [],
+                age: '',
+                preMRS: ''
+            });
+            const [recommendations, setRecommendations] = useState([]);
+
+            const calculateTimeSinceOnset = (lkwTime) => {
+                if (!lkwTime) return null;
+                const now = new Date();
+                const lkw = new Date(lkwTime);
+                const diffMs = now - lkw;
+                const diffHours = diffMs / (1000 * 60 * 60);
+                return diffHours;
+            };
+
+            const handleInputChange = (field, value) => {
+                const newData = { ...patientData, [field]: value };
+                
+                if (field === 'lkwTime') {
+                    newData.timeSinceOnset = calculateTimeSinceOnset(value);
+                }
+                
+                setPatientData(newData);
+            };
+
+            const checkContraindication = (contra) => {
+                const newContras = patientData.contraindications.includes(contra)
+                    ? patientData.contraindications.filter(c => c !== contra)
+                    : [...patientData.contraindications, contra];
+                setPatientData({ ...patientData, contraindications: newContras });
+            };
+
+            const generateRecommendations = () => {
+                const recs = [];
+                const hours = patientData.timeSinceOnset;
+                const hasDisablingStroke = parseInt(patientData.nihssScore) >= 6;
+                
+                // IV Thrombolysis recommendations
+                if (hours <= 4.5 && hasDisablingStroke && patientData.contraindications.length === 0) {
+                    recs.push({
+                        type: 'primary',
+                        treatment: 'IV Thrombolysis (Alteplase/Tenecteplase)',
+                        timeWindow: '0-4.5 hours',
+                        details: [
+                            'Administer within 4.5 hours of LKW',
+                            'Alteplase: 0.9 mg/kg (max 90 mg), 10% bolus, 90% over 60 min',
+                            'OR Tenecteplase: 0.25 mg/kg bolus (max 25 mg)',
+                            'Monitor for symptomatic ICH (3.4% risk)',
+                            'Keep BP <185/110 during and <180/105 for 24h after'
+                        ]
+                    });
+                } else if (hours > 4.5 && hours <= 9) {
+                    recs.push({
+                        type: 'secondary',
+                        treatment: 'Extended Window IV Thrombolysis',
+                        timeWindow: '4.5-9 hours',
+                        details: [
+                            'Consider if wake-up stroke <4.5h from awakening',
+                            'Requires MRI with DWI-FLAIR mismatch',
+                            'OR perfusion imaging showing salvageable tissue',
+                            'Same dosing as standard window'
+                        ]
+                    });
+                }
+                
+                // Mechanical Thrombectomy recommendations
+                if (patientData.hasLVO === 'yes') {
+                    const aspects = parseInt(patientData.aspectsScore);
+                    
+                    if (hours <= 6 && aspects >= 6) {
+                        recs.push({
+                            type: 'primary',
+                            treatment: 'Mechanical Thrombectomy',
+                            timeWindow: '0-6 hours',
+                            details: [
+                                'Standard eligibility for LVO',
+                                'Can combine with IV thrombolysis (bridging)',
+                                'No additional imaging beyond CTA required',
+                                'Time-dependent benefit - faster is better'
+                            ]
+                        });
+                    } else if (hours > 6 && hours <= 24) {
+                        if (patientData.vesselLocation === 'basilar') {
+                            recs.push({
+                                type: 'primary',
+                                treatment: 'Mechanical Thrombectomy - Basilar',
+                                timeWindow: '6-24 hours',
+                                details: [
+                                    'Basilar artery occlusion',
+                                    'PC-ASPECTS ≥6 required',
+                                    'Consider up to 24 hours from LKW',
+                                    'High morbidity without treatment'
+                                ]
+                            });
+                        } else if (aspects >= 6) {
+                            recs.push({
+                                type: 'primary',
+                                treatment: 'Mechanical Thrombectomy - Extended Window',
+                                timeWindow: '6-24 hours',
+                                details: [
+                                    'Requires perfusion imaging (CTP or MRP)',
+                                    'Must meet DAWN or DEFUSE 3 criteria',
+                                    'Large penumbra with small core',
+                                    'Still beneficial but less robust than early window'
+                                ]
+                            });
+                        } else if (aspects >= 3 && aspects < 6) {
+                            recs.push({
+                                type: 'secondary',
+                                treatment: 'Mechanical Thrombectomy - Large Core',
+                                timeWindow: 'Up to 24 hours',
+                                details: [
+                                    'ASPECTS 3-5 (large core)',
+                                    'Recent evidence supports treatment',
+                                    'Higher disability rates expected',
+                                    'Discuss risks/benefits with family'
+                                ]
+                            });
+                        }
+                    }
+                }
+                
+                // Antiplatelet recommendations
+                if (recs.length === 0 || (patientData.contraindications.length > 0 && hours > 4.5)) {
+                    if (parseInt(patientData.nihssScore) <= 5) {
+                        recs.push({
+                            type: 'alternative',
+                            treatment: 'Dual Antiplatelet Therapy',
+                            timeWindow: 'Within 24-72 hours',
+                            details: [
+                                'For minor strokes (NIHSS ≤5)',
+                                'Clopidogrel 300-600mg + Aspirin 81-325mg',
+                                'Continue dual therapy for 21-90 days',
+                                'Then single antiplatelet'
+                            ]
+                        });
+                    } else {
+                        recs.push({
+                            type: 'alternative',
+                            treatment: 'Aspirin Monotherapy',
+                            timeWindow: 'Within 48 hours',
+                            details: [
+                                'Aspirin 160-300mg',
+                                'For all patients not receiving thrombolysis/thrombectomy',
+                                'Continue daily for secondary prevention',
+                                'Consider switching to clopidogrel if aspirin intolerant'
+                            ]
+                        });
+                    }
+                }
+                
+                setRecommendations(recs);
+                setCurrentStep('recommendations');
+            };
+
+            const resetAlgorithm = () => {
+                setCurrentStep('initial');
+                setPatientData({
+                    hasStrokeSymptoms: null,
+                    lkwTime: '',
+                    timeSinceOnset: null,
+                    nihssScore: '',
+                    bloodGlucose: '',
+                    ncctDone: null,
+                    hasICH: null,
+                    ctaDone: null,
+                    hasLVO: null,
+                    vesselLocation: '',
+                    aspectsScore: '',
+                    contraindications: [],
+                    age: '',
+                    preMRS: ''
+                });
+                setRecommendations([]);
+            };
+
+            const renderStep = () => {
+                switch (currentStep) {
+                    case 'initial':
+                        return (
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-blue-900 mb-2">Step 1: Initial Assessment</h3>
+                                    <p className="text-blue-700">Confirm acute ischemic stroke presentation</p>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Does the patient have sudden focal neurological deficits consistent with acute stroke?
+                                        </label>
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => handleInputChange('hasStrokeSymptoms', true)}
+                                                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                    patientData.hasStrokeSymptoms === true
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                }`}
+                                            >
+                                                Yes
+                                            </button>
+                                            <button
+                                                onClick={() => handleInputChange('hasStrokeSymptoms', false)}
+                                                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                    patientData.hasStrokeSymptoms === false
+                                                        ? 'bg-red-600 text-white'
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                }`}
+                                            >
+                                                No
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {patientData.hasStrokeSymptoms === false && (
+                                        <div className="bg-red-50 p-4 rounded-lg">
+                                            <p className="text-red-700">
+                                                Consider stroke mimics: seizure, migraine, hypoglycemia, conversion disorder.
+                                                This algorithm is for confirmed acute ischemic stroke.
+                                            </p>
+                                        </div>
+                                    )}
+                                    
+                                    {patientData.hasStrokeSymptoms === true && (
+                                        <button
+                                            onClick={() => setCurrentStep('timing')}
+                                            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            Continue to Timing Assessment
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                        
+                    case 'timing':
+                        return (
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-blue-900 mb-2">Step 2: Time Assessment</h3>
+                                    <p className="text-blue-700">Determine Last Known Well (LKW) time</p>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                            <Clock className="inline w-4 h-4" />
+                                            When was the patient Last Known Well? (Date and Time)
+                                        </label>
+                                        <input
+                                            type="datetime-local"
+                                            value={patientData.lkwTime}
+                                            onChange={(e) => handleInputChange('lkwTime', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    
+                                    {patientData.timeSinceOnset !== null && (
+                                        <div className={`p-4 rounded-lg ${
+                                            patientData.timeSinceOnset <= 4.5 ? 'bg-green-50' : 
+                                            patientData.timeSinceOnset <= 24 ? 'bg-yellow-50' : 'bg-red-50'
+                                        }`}>
+                                            <p className={`font-semibold ${
+                                                patientData.timeSinceOnset <= 4.5 ? 'text-green-700' : 
+                                                patientData.timeSinceOnset <= 24 ? 'text-yellow-700' : 'text-red-700'
+                                            }`}>
+                                                Time since onset: {patientData.timeSinceOnset.toFixed(1)} hours
+                                            </p>
+                                            {patientData.timeSinceOnset <= 4.5 && (
+                                                <p className="text-green-600 text-sm mt-1">Within IV thrombolysis window</p>
+                                            )}
+                                            {patientData.timeSinceOnset > 4.5 && patientData.timeSinceOnset <= 24 && (
+                                                <p className="text-yellow-600 text-sm mt-1">Outside standard IV window, may be eligible for thrombectomy</p>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Patient Age (years)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={patientData.age}
+                                            onChange={(e) => handleInputChange('age', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Enter age"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Pre-stroke modified Rankin Scale (mRS)
+                                        </label>
+                                        <select
+                                            value={patientData.preMRS}
+                                            onChange={(e) => handleInputChange('preMRS', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        >
+                                            <option value="">Select mRS</option>
+                                            <option value="0">0 - No symptoms</option>
+                                            <option value="1">1 - No significant disability</option>
+                                            <option value="2">2 - Slight disability</option>
+                                            <option value="3">3 - Moderate disability</option>
+                                            <option value="4">4 - Moderately severe disability</option>
+                                            <option value="5">5 - Severe disability</option>
+                                        </select>
+                                    </div>
+                                    
+                                    {patientData.lkwTime && patientData.age && patientData.preMRS && (
+                                        <button
+                                            onClick={() => setCurrentStep('severity')}
+                                            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            Continue to Severity Assessment
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                        
+                    case 'severity':
+                        return (
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-blue-900 mb-2">Step 3: Severity & Labs</h3>
+                                    <p className="text-blue-700">Assess stroke severity and check blood glucose</p>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                            <Activity className="inline w-4 h-4" />
+                                            NIHSS Score (0-42)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="42"
+                                            value={patientData.nihssScore}
+                                            onChange={(e) => handleInputChange('nihssScore', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Enter NIHSS score"
+                                        />
+                                        {patientData.nihssScore && (
+                                            <p className={`text-sm mt-1 ${
+                                                parseInt(patientData.nihssScore) >= 6 ? 'text-orange-600' : 'text-green-600'
+                                            }`}>
+                                                {parseInt(patientData.nihssScore) >= 6 ? 'Disabling stroke' : 'Minor/non-disabling stroke'}
+                                            </p>
+                                        )}
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Blood Glucose (mg/dL)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={patientData.bloodGlucose}
+                                            onChange={(e) => handleInputChange('bloodGlucose', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Enter blood glucose"
+                                        />
+                                        {patientData.bloodGlucose && parseInt(patientData.bloodGlucose) < 50 && (
+                                            <p className="text-red-600 text-sm mt-1">
+                                                ⚠️ Hypoglycemia - treat before considering stroke therapies
+                                            </p>
+                                        )}
+                                    </div>
+                                    
+                                    {patientData.nihssScore && patientData.bloodGlucose && parseInt(patientData.bloodGlucose) >= 50 && (
+                                        <button
+                                            onClick={() => setCurrentStep('imaging')}
+                                            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            Continue to Imaging
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                        
+                    case 'imaging':
+                        return (
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-blue-900 mb-2">Step 4: Neuroimaging</h3>
+                                    <p className="text-blue-700">Review imaging results</p>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Has NCCT (non-contrast CT) been performed?
+                                        </label>
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => handleInputChange('ncctDone', true)}
+                                                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                    patientData.ncctDone === true
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                }`}
+                                            >
+                                                Yes
+                                            </button>
+                                            <button
+                                                onClick={() => handleInputChange('ncctDone', false)}
+                                                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                    patientData.ncctDone === false
+                                                        ? 'bg-red-600 text-white'
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                }`}
+                                            >
+                                                No
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    {patientData.ncctDone === true && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Does NCCT show intracerebral hemorrhage?
+                                                </label>
+                                                <div className="flex gap-4">
+                                                    <button
+                                                        onClick={() => handleInputChange('hasICH', true)}
+                                                        className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                            patientData.hasICH === true
+                                                                ? 'bg-red-600 text-white'
+                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                        }`}
+                                                    >
+                                                        Yes - ICH Present
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleInputChange('hasICH', false)}
+                                                        className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                            patientData.hasICH === false
+                                                                ? 'bg-green-600 text-white'
+                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                        }`}
+                                                    >
+                                                        No - No ICH
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            {patientData.hasICH === true && (
+                                                <div className="bg-red-50 p-4 rounded-lg">
+                                                    <p className="text-red-700 font-semibold">
+                                                        ⚠️ Intracerebral hemorrhage detected - IV thrombolysis contraindicated
+                                                    </p>
+                                                    <p className="text-red-600 text-sm mt-1">
+                                                        Manage as hemorrhagic stroke - consult neurosurgery if indicated
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {patientData.hasICH === false && (
+                                                <>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            ASPECTS Score (0-10)
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="10"
+                                                            value={patientData.aspectsScore}
+                                                            onChange={(e) => handleInputChange('aspectsScore', e.target.value)}
+                                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                            placeholder="Enter ASPECTS score"
+                                                        />
+                                                        {patientData.aspectsScore && (
+                                                            <p className={`text-sm mt-1 ${
+                                                                parseInt(patientData.aspectsScore) >= 6 ? 'text-green-600' : 'text-orange-600'
+                                                            }`}>
+                                                                {parseInt(patientData.aspectsScore) >= 6 
+                                                                    ? 'Standard eligibility for interventions' 
+                                                                    : parseInt(patientData.aspectsScore) >= 3
+                                                                    ? 'Large core - consider risks/benefits'
+                                                                    : 'Very large core - poor prognosis'}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                            Has CTA/MRA been performed?
+                                                        </label>
+                                                        <div className="flex gap-4">
+                                                            <button
+                                                                onClick={() => handleInputChange('ctaDone', true)}
+                                                                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                                    patientData.ctaDone === true
+                                                                        ? 'bg-blue-600 text-white'
+                                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                }`}
+                                                            >
+                                                                Yes
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleInputChange('ctaDone', false)}
+                                                                className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                                    patientData.ctaDone === false
+                                                                        ? 'bg-gray-600 text-white'
+                                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                }`}
+                                                            >
+                                                                No/Pending
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {patientData.ctaDone === true && (
+                                                        <>
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                                    Is there a large vessel occlusion (LVO)?
+                                                                </label>
+                                                                <div className="flex gap-4">
+                                                                    <button
+                                                                        onClick={() => handleInputChange('hasLVO', 'yes')}
+                                                                        className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                                            patientData.hasLVO === 'yes'
+                                                                                ? 'bg-blue-600 text-white'
+                                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                        }`}
+                                                                    >
+                                                                        Yes - LVO Present
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleInputChange('hasLVO', 'no')}
+                                                                        className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                                                                            patientData.hasLVO === 'no'
+                                                                                ? 'bg-gray-600 text-white'
+                                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                        }`}
+                                                                    >
+                                                                        No LVO
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {patientData.hasLVO === 'yes' && (
+                                                                <div>
+                                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                                        Location of occlusion
+                                                                    </label>
+                                                                    <select
+                                                                        value={patientData.vesselLocation}
+                                                                        onChange={(e) => handleInputChange('vesselLocation', e.target.value)}
+                                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                    >
+                                                                        <option value="">Select location</option>
+                                                                        <option value="ica">Internal Carotid Artery (ICA)</option>
+                                                                        <option value="m1">M1 segment of MCA</option>
+                                                                        <option value="m2">M2 segment of MCA</option>
+                                                                        <option value="basilar">Basilar artery</option>
+                                                                        <option value="other">Other location</option>
+                                                                    </select>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                    
+                                    {patientData.ncctDone && patientData.hasICH === false && patientData.aspectsScore && 
+                                     (patientData.ctaDone === false || (patientData.ctaDone === true && 
+                                      (patientData.hasLVO === 'no' || (patientData.hasLVO === 'yes' && patientData.vesselLocation)))) && (
+                                        <button
+                                            onClick={() => setCurrentStep('contraindications')}
+                                            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            Continue to Contraindications
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                        
+                    case 'contraindications':
+                        return (
+                            <div className="space-y-6">
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-blue-900 mb-2">Step 5: Contraindications Check</h3>
+                                    <p className="text-blue-700">Check for contraindications to IV thrombolysis</p>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                    <p className="text-sm text-gray-600">Select all that apply:</p>
+                                    
+                                    {[
+                                        { id: 'bleeding', label: 'Active bleeding or recent major surgery' },
+                                        { id: 'anticoag', label: 'Recent use of DOACs (within 48h)' },
+                                        { id: 'bp', label: 'Uncontrolled HTN (>185/110 mmHg)' },
+                                        { id: 'platelets', label: 'Platelet count <100,000/mm³' },
+                                        { id: 'inr', label: 'INR >1.7 or PT >15 seconds' },
+                                        { id: 'stroke', label: 'Previous stroke within 3 months' },
+                                        { id: 'head', label: 'Head trauma or stroke within 3 months' },
+                                        { id: 'gi', label: 'GI/GU hemorrhage within 21 days' },
+                                        { id: 'surgery', label: 'Major surgery within 14 days' },
+                                        { id: 'puncture', label: 'Arterial puncture at non-compressible site within 7 days' }
+                                    ].map(contra => (
+                                        <label key={contra.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={patientData.contraindications.includes(contra.id)}
+                                                onChange={() => checkContraindication(contra.id)}
+                                                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="text-gray-700">{contra.label}</span>
+                                        </label>
+                                    ))}
+                                    
+                                    {patientData.contraindications.length > 0 && (
+                                        <div className="bg-yellow-50 p-4 rounded-lg">
+                                            <p className="text-yellow-700 font-semibold">
+                                                ⚠️ {patientData.contraindications.length} contraindication(s) to IV thrombolysis present
+                                            </p>
+                                            <p className="text-yellow-600 text-sm mt-1">
+                                                Patient may still be eligible for mechanical thrombectomy
+                                            </p>
+                                        </div>
+                                    )}
+                                    
+                                    <button
+                                        onClick={generateRecommendations}
+                                        className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        Generate Treatment Recommendations
+                                        <FileText className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                        
+                    case 'recommendations':
+                        return (
+                            <div className="space-y-6">
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <h3 className="font-semibold text-green-900 mb-2">Treatment Recommendations</h3>
+                                    <p className="text-green-700">Based on patient data and current guidelines</p>
+                                </div>
+                                
+                                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                    <h4 className="font-semibold text-gray-700">Patient Summary:</h4>
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <div>Time since onset: <span className="font-medium">{patientData.timeSinceOnset?.toFixed(1)} hours</span></div>
+                                        <div>NIHSS: <span className="font-medium">{patientData.nihssScore}</span></div>
+                                        <div>ASPECTS: <span className="font-medium">{patientData.aspectsScore}</span></div>
+                                        <div>LVO: <span className="font-medium">{patientData.hasLVO === 'yes' ? `Yes (${patientData.vesselLocation})` : 'No'}</span></div>
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    {recommendations.map((rec, index) => (
+                                        <div key={index} className={`rounded-lg p-4 ${
+                                            rec.type === 'primary' ? 'bg-blue-50 border-2 border-blue-200' : 
+                                            rec.type === 'secondary' ? 'bg-yellow-50 border-2 border-yellow-200' :
+                                            'bg-gray-50 border-2 border-gray-200'
+                                        }`}>
+                                            <div className="flex items-start justify-between mb-3">
+                                                <h4 className={`font-semibold text-lg ${
+                                                    rec.type === 'primary' ? 'text-blue-900' : 
+                                                    rec.type === 'secondary' ? 'text-yellow-900' :
+                                                    'text-gray-900'
+                                                }`}>
+                                                    {rec.treatment}
+                                                </h4>
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                    rec.type === 'primary' ? 'bg-blue-200 text-blue-800' : 
+                                                    rec.type === 'secondary' ? 'bg-yellow-200 text-yellow-800' :
+                                                    'bg-gray-200 text-gray-800'
+                                                }`}>
+                                                    {rec.timeWindow}
+                                                </span>
+                                            </div>
+                                            <ul className="space-y-1">
+                                                {rec.details.map((detail, idx) => (
+                                                    <li key={idx} className="flex items-start gap-2 text-gray-700">
+                                                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                                        <span className="text-sm">{detail}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <div className="bg-amber-50 p-4 rounded-lg">
+                                    <h4 className="font-semibold text-amber-900 mb-2">Post-Treatment Management:</h4>
+                                    <ul className="space-y-1 text-sm text-amber-800">
+                                        <li>• Monitor neurological status closely</li>
+                                        <li>• Maintain BP targets based on treatment received</li>
+                                        <li>• Hold antithrombotics for 24h after thrombolysis</li>
+                                        <li>• Admit to stroke unit or neuro ICU</li>
+                                        <li>• Initiate secondary prevention measures</li>
+                                    </ul>
+                                </div>
+                                
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={resetAlgorithm}
+                                        className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <RefreshCw className="w-5 h-5" />
+                                        Start New Assessment
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                        
+                    default:
+                        return null;
+                }
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto p-6">
+                    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+                            <h1 className="text-2xl font-bold flex items-center gap-2">
+                                <Activity className="w-8 h-8" />
+                                Acute Ischemic Stroke Decision Algorithm
+                            </h1>
+                            <p className="mt-2 opacity-90">Evidence-based treatment pathway</p>
+                        </div>
+                        
+                        <div className="p-6">
+                            {currentStep !== 'initial' && currentStep !== 'recommendations' && (
+                                <button
+                                    onClick={() => {
+                                        const steps = ['initial', 'timing', 'severity', 'imaging', 'contraindications'];
+                                        const currentIndex = steps.indexOf(currentStep);
+                                        if (currentIndex > 0) {
+                                            setCurrentStep(steps[currentIndex - 1]);
+                                        }
+                                    }}
+                                    className="mb-4 text-blue-600 hover:text-blue-700 flex items-center gap-1 text-sm"
+                                >
+                                    ← Back to previous step
+                                </button>
+                            )}
+                            
+                            {renderStep()}
+                        </div>
+                        
+                        <div className="bg-gray-50 px-6 py-4 border-t">
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-600 flex items-start gap-1">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    This tool is for educational purposes and clinical decision support. Always use clinical judgment and follow institutional protocols.
+                                </p>
+                                <a 
+                                    href="https://github.com/yourusername/stroke-algorithm" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                    title="View on GitHub"
+                                >
+                                    <Github className="h-5 w-5" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        ReactDOM.render(<StrokeDecisionAlgorithm />, document.getElementById('root'));
+    </script>
+</body>
+</html>
