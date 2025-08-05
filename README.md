@@ -179,7 +179,7 @@ This project is licensed under the AGPL-v3 License - see the [License: AGPL-V3](
 
 For issues or questions:
 - Open an issue on GitHub
-- Contact: [dcicantab5@icloud,com]
+- Contact: [dcicantab5@icloud.com]
 
 ---
 
