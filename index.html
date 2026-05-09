@@ -136,19 +136,118 @@ function Step2({data,set,next,back}){
   );
 }
 
+function NihssCalc({onScore,initialScores}){
+  const ITEMS=[
+    {id:"1a",label:"1a. Level of Consciousness",max:3,options:["0 = Alert; keenly responsive","1 = Not alert; arousable by minor stimulation","2 = Not alert; repeated stimulation needed","3 = Unresponsive / reflexive only"]},
+    {id:"1b",label:"1b. LOC Questions (month, age)",max:2,options:["0 = Both correct","1 = One correct","2 = Neither correct"]},
+    {id:"1c",label:"1c. LOC Commands (open/close eyes, grip/release)",max:2,options:["0 = Both tasks correct","1 = One task correct","2 = Neither task correct"]},
+    {id:"2",label:"2. Best Gaze",max:2,options:["0 = Normal","1 = Partial gaze palsy","2 = Forced deviation / total gaze paresis"]},
+    {id:"3",label:"3. Visual Fields",max:3,options:["0 = No visual loss","1 = Partial hemianopia","2 = Complete hemianopia","3 = Bilateral hemianopia (blind)"]},
+    {id:"4",label:"4. Facial Palsy",max:3,options:["0 = Normal symmetric movements","1 = Minor paralysis (flat nasolabial fold)","2 = Partial paralysis (lower face)","3 = Complete paralysis (one or both sides)"]},
+    {id:"5a",label:"5a. Motor Arm — Left",max:4,options:["0 = No drift (holds 90°/45° for 10 s)","1 = Drift (does not hit bed)","2 = Some effort against gravity","3 = No effort against gravity; falls","4 = No movement"]},
+    {id:"5b",label:"5b. Motor Arm — Right",max:4,options:["0 = No drift (holds 90°/45° for 10 s)","1 = Drift (does not hit bed)","2 = Some effort against gravity","3 = No effort against gravity; falls","4 = No movement"]},
+    {id:"6a",label:"6a. Motor Leg — Left",max:4,options:["0 = No drift (holds 30° for 5 s)","1 = Drift (does not hit bed)","2 = Some effort against gravity","3 = No effort against gravity; falls","4 = No movement"]},
+    {id:"6b",label:"6b. Motor Leg — Right",max:4,options:["0 = No drift (holds 30° for 5 s)","1 = Drift (does not hit bed)","2 = Some effort against gravity","3 = No effort against gravity; falls","4 = No movement"]},
+    {id:"7",label:"7. Limb Ataxia",max:2,options:["0 = Absent","1 = Present in one limb","2 = Present in two limbs"]},
+    {id:"8",label:"8. Sensory",max:2,options:["0 = Normal","1 = Mild-to-moderate loss","2 = Severe to total loss"]},
+    {id:"9",label:"9. Best Language",max:3,options:["0 = No aphasia; normal","1 = Mild-to-moderate aphasia","2 = Severe aphasia","3 = Mute / global aphasia"]},
+    {id:"10",label:"10. Dysarthria",max:2,options:["0 = Normal","1 = Mild-to-moderate; slurs some words","2 = Severe / unintelligible / mute"]},
+    {id:"11",label:"11. Extinction & Inattention",max:2,options:["0 = No abnormality","1 = Inattention/extinction in one modality","2 = Profound hemi-inattention (>1 modality)"]},
+  ];
+  const [scores,setScores]=useState(initialScores||{});
+  const total=Object.values(scores).reduce((a,b)=>a+b,0);
+  const answered=Object.keys(scores).length;
+  const allDone=answered===ITEMS.length;
+
+  const pick=(id,val)=>{
+    const next={...scores,[id]:val};
+    setScores(next);
+    const t=Object.values(next).reduce((a,b)=>a+b,0);
+    onScore(t,next,Object.keys(next).length===ITEMS.length);
+  };
+
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <span style={{fontSize:11,color:"#64748b"}}>{answered}/{ITEMS.length} items scored</span>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:11,color:"#64748b"}}>Running total:</span>
+          <span style={{fontSize:18,fontWeight:800,color:total>=6?"#991b1b":total>0?"#854F0B":"#166534",fontFamily:"monospace"}}>{total}</span>
+        </div>
+      </div>
+      <div style={{background:"#e2e8f0",borderRadius:6,height:4,marginBottom:14}}>
+        <div style={{background:"#0C447C",height:4,borderRadius:6,width:`${(answered/ITEMS.length)*100}%`,transition:"width .3s"}}/>
+      </div>
+      {ITEMS.map(item=>{
+        const sel=scores[item.id];
+        return(
+          <div key={item.id} style={{marginBottom:8,border:"1px solid "+(sel!==undefined?"#c7d2fe":"#e2e8f0"),borderRadius:7,overflow:"hidden",background:sel!==undefined?"#f8fafc":"#fff",transition:"border-color .2s"}}>
+            <div style={{padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid #f1f5f9"}}>
+              <span style={{fontSize:11.5,fontWeight:600,color:"#334155"}}>{item.label}</span>
+              {sel!==undefined&&<span style={{fontSize:11,fontWeight:700,color:"#0C447C",background:"#E6F1FB",borderRadius:4,padding:"1px 6px"}}>{sel}</span>}
+            </div>
+            <div style={{padding:"4px 10px 8px"}}>
+              {item.options.map((opt,oi)=>{
+                const active=sel===oi;
+                return(
+                  <div key={oi}
+                    onClick={()=>pick(item.id,oi)}
+                    style={{
+                      padding:"5px 8px",margin:"2px 0",borderRadius:5,cursor:"pointer",fontSize:11,
+                      background:active?"#0C447C":"transparent",color:active?"#fff":"#475569",
+                      fontWeight:active?600:400,transition:"all .15s",
+                      border:active?"1px solid #0C447C":"1px solid transparent"
+                    }}
+                    onMouseEnter={e=>{if(!active)e.currentTarget.style.background="#f1f5f9"}}
+                    onMouseLeave={e=>{if(!active)e.currentTarget.style.background="transparent"}}
+                  >{opt}</div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      {allDone&&<div style={{background:"#EAF3DE",border:"1px solid #3B6D11",borderRadius:8,padding:"10px 14px",marginTop:10}}>
+        <p style={{fontSize:12,fontWeight:700,color:"#166534"}}>NIHSS total: {total}/42 — {total===0?"No deficit":total<=5?"Minor stroke":total<=15?"Moderate stroke":total<=20?"Moderate–severe stroke":"Severe stroke"}</p>
+      </div>}
+    </div>
+  );
+}
+
 function Step3({data,set,next,back}){
-  const [nihss,setNihss]=useState(data.nihss||"");
+  const [nihss,setNihss]=useState(data.nihss!=null?String(data.nihss):"");
   const [glucose,setGlucose]=useState(data.glucose||"");
+  const [calcOpen,setCalcOpen]=useState(data.nihssScores?true:false);
+  const [manualMode,setManualMode]=useState(!data.nihssScores&&!calcOpen);
   const glucoseLow=parseFloat(glucose)<2.8&&glucose!=="";
+
+  const handleCalcScore=(total,scores,complete)=>{
+    setNihss(String(total));
+    set({...data,nihss:total,nihssScores:scores});
+  };
+
   return(
     <div>
       <h2 style={{fontSize:16,fontWeight:700,color:"#0C447C",marginBottom:4}}>Step 3 — Severity &amp; blood glucose</h2>
       <p style={{fontSize:12,color:"#64748b",marginBottom:20}}>Assess neurological deficit and exclude hypoglycemia as stroke mimic.</p>
+
       <Card color="blue">
-        <Label>NIHSS score (0–42)</Label>
-        <Input type="number" min="0" max="42" value={nihss} placeholder="Enter NIHSS"
-          onChange={e=>{setNihss(e.target.value);set({...data,nihss:parseInt(e.target.value)||0})}}/>
-        {nihss&&<p style={{marginTop:6,fontSize:11.5,color:parseInt(nihss)>=6?"#166534":parseInt(nihss)>0?"#854F0B":"#64748b",fontWeight:600}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <Label>NIHSS score (0–42)</Label>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={()=>{setManualMode(true);setCalcOpen(false)}} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:manualMode?"1.5px solid #0C447C":"1px solid #cbd5e1",background:manualMode?"#E6F1FB":"#fff",color:manualMode?"#0C447C":"#64748b",cursor:"pointer",fontWeight:manualMode?600:400}}>Enter manually</button>
+            <button onClick={()=>{setCalcOpen(true);setManualMode(false)}} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:calcOpen?"1.5px solid #0C447C":"1px solid #cbd5e1",background:calcOpen?"#E6F1FB":"#fff",color:calcOpen?"#0C447C":"#64748b",cursor:"pointer",fontWeight:calcOpen?600:400}}>Calculate NIHSS</button>
+          </div>
+        </div>
+
+        {manualMode&&<Input type="number" min="0" max="42" value={nihss} placeholder="Enter NIHSS"
+          onChange={e=>{setNihss(e.target.value);set({...data,nihss:parseInt(e.target.value)||0,nihssScores:undefined})}}/>}
+
+        {calcOpen&&<div style={{marginTop:8,borderTop:"1px solid #e2e8f0",paddingTop:12}}>
+          <NihssCalc onScore={handleCalcScore} initialScores={data.nihssScores}/>
+        </div>}
+
+        {nihss&&<p style={{marginTop:8,fontSize:11.5,color:parseInt(nihss)>=6?"#166534":parseInt(nihss)>0?"#854F0B":"#64748b",fontWeight:600}}>
           {parseInt(nihss)===0?"NIHSS 0 — asymptomatic":parseInt(nihss)<=5?"NIHSS 1–5 — minor / non-disabling stroke":"NIHSS ≥6 — disabling stroke (eligible for IV tPA if other criteria met)"}
         </p>}
       </Card>
@@ -167,14 +266,250 @@ function Step3({data,set,next,back}){
   );
 }
 
+/* ── ASPECTS interactive calculator ── */
+function AspectsCalc({affected,onToggle,score}){
+  const REGIONS_BG=[
+    {id:"C",label:"C — Caudate",cx:168,cy:155,rx:16,ry:12},
+    {id:"L",label:"L — Lentiform",cx:190,cy:178,rx:18,ry:13},
+    {id:"IC",label:"IC — Internal capsule",cx:172,cy:192,rx:12,ry:18},
+    {id:"I",label:"I — Insular cortex",cx:218,cy:172,rx:14,ry:20},
+    {id:"M1",label:"M1 — Anterior MCA (frontal operculum)",cx:228,cy:130,rx:28,ry:28},
+    {id:"M2",label:"M2 — Lateral MCA (ant. temporal)",cx:248,cy:185,rx:26,ry:26},
+    {id:"M3",label:"M3 — Posterior MCA (post. temporal)",cx:228,cy:240,rx:28,ry:26},
+  ];
+  const REGIONS_SG=[
+    {id:"M4",label:"M4 — Superior to M1",cx:192,cy:115,rx:32,ry:35},
+    {id:"M5",label:"M5 — Superior to M2",cx:228,cy:168,rx:30,ry:32},
+    {id:"M6",label:"M6 — Superior to M3",cx:210,cy:225,rx:30,ry:30},
+  ];
+  const allRegions=[...REGIONS_BG,...REGIONS_SG];
+
+  const regionBtn=(r)=>{
+    const hit=affected.includes(r.id);
+    return(
+      <div key={r.id} onClick={()=>onToggle(r.id)}
+        style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px",margin:"2px 0",borderRadius:5,cursor:"pointer",
+        background:hit?"#FCEBEB":"#f8fafc",border:hit?"1px solid #A32D2D":"1px solid #e2e8f0",transition:"all .15s"}}
+        onMouseEnter={e=>{if(!hit)e.currentTarget.style.background="#f1f5f9"}}
+        onMouseLeave={e=>{if(!hit)e.currentTarget.style.background=hit?"#FCEBEB":"#f8fafc"}}>
+        <div style={{width:16,height:16,borderRadius:3,border:hit?"2px solid #A32D2D":"2px solid #cbd5e1",background:hit?"#A32D2D":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {hit&&<span style={{color:"#fff",fontSize:10,fontWeight:800}}>✕</span>}
+        </div>
+        <span style={{fontSize:11,color:hit?"#991b1b":"#475569",fontWeight:hit?600:400}}>{r.label}</span>
+        {hit&&<span style={{fontSize:9,color:"#A32D2D",marginLeft:"auto",fontWeight:700}}>−1</span>}
+      </div>
+    );
+  };
+
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:11,color:"#64748b"}}>Tap affected regions (each subtracts 1 point)</span>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:11,color:"#64748b"}}>ASPECTS:</span>
+          <span style={{fontSize:20,fontWeight:800,color:score>=7?"#166534":score>=3?"#854F0B":"#991b1b",fontFamily:"monospace"}}>{score}</span>
+          <span style={{fontSize:11,color:"#94a3b8"}}>/10</span>
+        </div>
+      </div>
+
+      {/* SVG brain diagrams side by side */}
+      <div style={{display:"flex",gap:4,justifyContent:"center",marginBottom:12,background:"#f8fafc",borderRadius:8,padding:"8px 4px",border:"1px solid #e2e8f0"}}>
+        {/* Basal ganglia level */}
+        <div style={{textAlign:"center",flex:1}}>
+          <p style={{fontSize:9,fontWeight:600,color:"#0C447C",marginBottom:4}}>Basal ganglia level</p>
+          <svg viewBox="70 60 220 240" width="100%" style={{maxWidth:200}}>
+            <ellipse cx="180" cy="180" rx="100" ry="120" fill="none" stroke="#94a3b8" strokeWidth="2"/>
+            <line x1="180" y1="60" x2="180" y2="300" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4"/>
+            {REGIONS_BG.map(r=>{
+              const hit=affected.includes(r.id);
+              return <g key={r.id} onClick={()=>onToggle(r.id)} style={{cursor:"pointer"}}>
+                <ellipse cx={r.cx} cy={r.cy} rx={r.rx} ry={r.ry} fill={hit?"rgba(163,45,45,.35)":"rgba(12,68,124,.08)"} stroke={hit?"#A32D2D":"#0C447C"} strokeWidth={hit?2:1.2} strokeDasharray={hit?"":"3"}/>
+                <text x={r.cx} y={r.cy+4} textAnchor="middle" fontSize="10" fontWeight="700" fill={hit?"#A32D2D":"#0C447C"}>{r.id}</text>
+              </g>;
+            })}
+            {/* Mirror side (dimmed) */}
+            {REGIONS_BG.map(r=>{
+              const mx=180-(r.cx-180);
+              return <ellipse key={r.id+"m"} cx={mx} cy={r.cy} rx={r.rx} ry={r.ry} fill="rgba(0,0,0,.03)" stroke="#ddd" strokeWidth="0.8" strokeDasharray="3"/>;
+            })}
+          </svg>
+        </div>
+        {/* Supraganglionic level */}
+        <div style={{textAlign:"center",flex:1}}>
+          <p style={{fontSize:9,fontWeight:600,color:"#0C447C",marginBottom:4}}>Above basal ganglia</p>
+          <svg viewBox="70 60 220 240" width="100%" style={{maxWidth:200}}>
+            <ellipse cx="180" cy="180" rx="100" ry="120" fill="none" stroke="#94a3b8" strokeWidth="2"/>
+            <line x1="180" y1="60" x2="180" y2="300" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4"/>
+            {/* Ventricle shapes */}
+            <ellipse cx="165" cy="165" rx="8" ry="35" fill="none" stroke="#cbd5e1" strokeWidth="1.2"/>
+            <ellipse cx="195" cy="165" rx="8" ry="35" fill="none" stroke="#cbd5e1" strokeWidth="1.2"/>
+            {REGIONS_SG.map(r=>{
+              const hit=affected.includes(r.id);
+              return <g key={r.id} onClick={()=>onToggle(r.id)} style={{cursor:"pointer"}}>
+                <ellipse cx={r.cx} cy={r.cy} rx={r.rx} ry={r.ry} fill={hit?"rgba(163,45,45,.35)":"rgba(12,68,124,.08)"} stroke={hit?"#A32D2D":"#0C447C"} strokeWidth={hit?2:1.2} strokeDasharray={hit?"":"3"}/>
+                <text x={r.cx} y={r.cy+4} textAnchor="middle" fontSize="10" fontWeight="700" fill={hit?"#A32D2D":"#0C447C"}>{r.id}</text>
+              </g>;
+            })}
+            {REGIONS_SG.map(r=>{
+              const mx=180-(r.cx-180);
+              return <ellipse key={r.id+"m"} cx={mx} cy={r.cy} rx={r.rx} ry={r.ry} fill="rgba(0,0,0,.03)" stroke="#ddd" strokeWidth="0.8" strokeDasharray="3"/>;
+            })}
+          </svg>
+        </div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 8px"}}>
+        <div>
+          <p style={{fontSize:9,fontWeight:600,color:"#64748b",marginBottom:2,textTransform:"uppercase",letterSpacing:".5px"}}>Basal ganglia level (M1–M3)</p>
+          {REGIONS_BG.map(regionBtn)}
+        </div>
+        <div>
+          <p style={{fontSize:9,fontWeight:600,color:"#64748b",marginBottom:2,textTransform:"uppercase",letterSpacing:".5px"}}>Supraganglionic (M4–M6)</p>
+          {REGIONS_SG.map(regionBtn)}
+        </div>
+      </div>
+
+      {score<=7&&<div style={{background:score>=3?"#FAEEDA":"#FCEBEB",border:`1px solid ${score>=3?"#854F0B":"#A32D2D"}`,borderRadius:6,padding:"8px 12px",marginTop:8}}>
+        <p style={{fontSize:11,fontWeight:600,color:score>=3?"#633806":"#991b1b"}}>
+          {score>=6?"ASPECTS ≤7 — predicts worse functional outcome at 3 months":score>=3?"ASPECTS 3–5 — large core; MT may still benefit (ANGEL-ASPECT, SELECT2)":"ASPECTS 0–2 — very large core; poor prognosis"}
+        </p>
+      </div>}
+    </div>
+  );
+}
+
+/* ── pc-ASPECTS interactive calculator ── */
+function PcAspectsCalc({affected,onToggle,score}){
+  const REGIONS=[
+    {id:"LTh",label:"Left thalamus",points:1,cx:155,cy:120},
+    {id:"RTh",label:"Right thalamus",points:1,cx:205,cy:120},
+    {id:"LOc",label:"Left occipital lobe",points:1,cx:140,cy:200},
+    {id:"ROc",label:"Right occipital lobe",points:1,cx:220,cy:200},
+    {id:"MB",label:"Midbrain (uni- or bilateral)",points:2,cx:180,cy:155},
+    {id:"Pons",label:"Pons (uni- or bilateral)",points:2,cx:180,cy:195},
+    {id:"LCb",label:"Left cerebellar hemisphere",points:1,cx:130,cy:240},
+    {id:"RCb",label:"Right cerebellar hemisphere",points:1,cx:230,cy:240},
+  ];
+
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <span style={{fontSize:11,color:"#64748b"}}>Tap affected regions</span>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:11,color:"#64748b"}}>pc-ASPECTS:</span>
+          <span style={{fontSize:20,fontWeight:800,color:score>=8?"#166534":score>=6?"#854F0B":"#991b1b",fontFamily:"monospace"}}>{score}</span>
+          <span style={{fontSize:11,color:"#94a3b8"}}>/10</span>
+        </div>
+      </div>
+
+      {/* SVG posterior fossa diagram */}
+      <div style={{display:"flex",justifyContent:"center",marginBottom:12,background:"#f8fafc",borderRadius:8,padding:"8px",border:"1px solid #e2e8f0"}}>
+        <svg viewBox="90 70 180 220" width="100%" style={{maxWidth:260}}>
+          {/* Brainstem outline */}
+          <rect x="165" y="130" width="30" height="90" rx="8" fill="none" stroke="#94a3b8" strokeWidth="1.5"/>
+          {/* Cerebellum outlines */}
+          <ellipse cx="140" cy="210" rx="40" ry="35" fill="none" stroke="#94a3b8" strokeWidth="1.5"/>
+          <ellipse cx="220" cy="210" rx="40" ry="35" fill="none" stroke="#94a3b8" strokeWidth="1.5"/>
+          {/* Thalami outlines */}
+          <ellipse cx="160" cy="110" rx="22" ry="14" fill="none" stroke="#94a3b8" strokeWidth="1.2"/>
+          <ellipse cx="200" cy="110" rx="22" ry="14" fill="none" stroke="#94a3b8" strokeWidth="1.2"/>
+          {/* Occipital outlines */}
+          <ellipse cx="145" cy="155" rx="20" ry="16" fill="none" stroke="#94a3b8" strokeWidth="1.2"/>
+          <ellipse cx="215" cy="155" rx="20" ry="16" fill="none" stroke="#94a3b8" strokeWidth="1.2"/>
+
+          {/* Clickable regions */}
+          {REGIONS.map(r=>{
+            const hit=affected.includes(r.id);
+            const isCircle=r.id==="MB"||r.id==="Pons";
+            const rx=isCircle?14:(r.id.includes("Cb")?30:(r.id.includes("Th")?18:16));
+            const ry=isCircle?12:(r.id.includes("Cb")?24:(r.id.includes("Th")?10:12));
+            return <g key={r.id} onClick={()=>onToggle(r.id)} style={{cursor:"pointer"}}>
+              <ellipse cx={r.cx} cy={r.cy} rx={rx} ry={ry}
+                fill={hit?"rgba(163,45,45,.4)":"rgba(12,68,124,.1)"}
+                stroke={hit?"#A32D2D":"#0C447C"} strokeWidth={hit?2.5:1.2}/>
+              <text x={r.cx} y={r.cy+4} textAnchor="middle" fontSize="8" fontWeight="700" fill={hit?"#A32D2D":"#0C447C"}>
+                {r.id==="LTh"?"L.Th":r.id==="RTh"?"R.Th":r.id==="LOc"?"L.Oc":r.id==="ROc"?"R.Oc":r.id==="LCb"?"L.Cb":r.id==="RCb"?"R.Cb":r.id}
+              </text>
+            </g>;
+          })}
+          {/* Labels */}
+          <text x="180" y="88" textAnchor="middle" fontSize="8" fill="#64748b" fontWeight="600">THALAMI</text>
+          <text x="180" y="275" textAnchor="middle" fontSize="8" fill="#64748b" fontWeight="600">CEREBELLUM</text>
+        </svg>
+      </div>
+
+      <div>
+        {REGIONS.map(r=>{
+          const hit=affected.includes(r.id);
+          return(
+            <div key={r.id} onClick={()=>onToggle(r.id)}
+              style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px",margin:"2px 0",borderRadius:5,cursor:"pointer",
+              background:hit?"#FCEBEB":"#f8fafc",border:hit?"1px solid #A32D2D":"1px solid #e2e8f0",transition:"all .15s"}}
+              onMouseEnter={e=>{if(!hit)e.currentTarget.style.background="#f1f5f9"}}
+              onMouseLeave={e=>{if(!hit)e.currentTarget.style.background=hit?"#FCEBEB":"#f8fafc"}}>
+              <div style={{width:16,height:16,borderRadius:3,border:hit?"2px solid #A32D2D":"2px solid #cbd5e1",background:hit?"#A32D2D":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                {hit&&<span style={{color:"#fff",fontSize:10,fontWeight:800}}>✕</span>}
+              </div>
+              <span style={{fontSize:11,color:hit?"#991b1b":"#475569",fontWeight:hit?600:400}}>{r.label}</span>
+              <span style={{fontSize:9,color:hit?"#A32D2D":"#94a3b8",marginLeft:"auto",fontWeight:700}}>{hit?"−":""}{r.points}pt{r.points>1?"s":""}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {score<8&&<div style={{background:score>=6?"#FAEEDA":"#FCEBEB",border:`1px solid ${score>=6?"#854F0B":"#A32D2D"}`,borderRadius:6,padding:"8px 12px",marginTop:8}}>
+        <p style={{fontSize:11,fontWeight:600,color:score>=6?"#633806":"#991b1b"}}>
+          {score>=6?"pc-ASPECTS < 8 — associated with poor prognosis (Puetz, 2009)":"pc-ASPECTS < 6 — extensive posterior ischemia; MT trials excluded pc-ASPECTS < 6"}
+        </p>
+      </div>}
+    </div>
+  );
+}
+
+/* ── Step 4 — Neuroimaging ── */
 function Step4({data,set,next,back}){
   const [ich,setIch]=useState(data.ich);
   const [lvo,setLvo]=useState(data.lvo);
-  const [aspects,setAspects]=useState(data.aspects||"");
+  const [lvoSite,setLvoSite]=useState(data.lvoSite||"");
+  const [circulation,setCirculation]=useState(data.circulation||"");
+  const [aspects,setAspects]=useState(data.aspects!=null?String(data.aspects):"");
+  const [pcAspects,setPcAspects]=useState(data.pcAspects!=null?String(data.pcAspects):"");
+  const [aspectsMode,setAspectsMode]=useState(data.aspectsRegions?"calc":"manual");
+  const [pcAspectsMode,setPcAspectsMode]=useState(data.pcAspectsRegions?"calc":"manual");
+  const [aspectsAffected,setAspectsAffected]=useState(data.aspectsRegions||[]);
+  const [pcAspectsAffected,setPcAspectsAffected]=useState(data.pcAspectsRegions||[]);
+
+  const PC_POINTS={LTh:1,RTh:1,LOc:1,ROc:1,MB:2,Pons:2,LCb:1,RCb:1};
+
+  const toggleAspects=(id)=>{
+    const next=aspectsAffected.includes(id)?aspectsAffected.filter(x=>x!==id):[...aspectsAffected,id];
+    setAspectsAffected(next);
+    const s=10-next.length;
+    setAspects(String(s));
+    set({...data,aspects:s,aspectsRegions:next});
+  };
+  const togglePcAspects=(id)=>{
+    const next=pcAspectsAffected.includes(id)?pcAspectsAffected.filter(x=>x!==id):[...pcAspectsAffected,id];
+    setPcAspectsAffected(next);
+    const s=10-next.reduce((a,r)=>a+(PC_POINTS[r]||0),0);
+    setPcAspects(String(Math.max(0,s)));
+    set({...data,pcAspects:Math.max(0,s),pcAspectsRegions:next});
+  };
+
+  const anteriorSites=["Intracranial ICA","MCA M1 segment","MCA M2 segment"];
+  const posteriorSites=["Basilar artery"];
+  const circ=circulation||(lvoSite&&anteriorSites.includes(lvoSite)?"anterior":lvoSite&&posteriorSites.includes(lvoSite)?"posterior":"");
+  const showAspects=ich===false&&(circ==="anterior"||(!circ&&!lvo));
+  const showPcAspects=ich===false&&circ==="posterior";
+  const activeScore=circ==="posterior"?parseInt(pcAspects):parseInt(aspects);
+  const canProceed=ich===false&&(circ==="anterior"?aspects!=="":circ==="posterior"?pcAspects!=="":aspects!=="")&&lvo!==undefined;
+
   return(
     <div>
       <h2 style={{fontSize:16,fontWeight:700,color:"#0C447C",marginBottom:4}}>Step 4 — Neuroimaging</h2>
       <p style={{fontSize:12,color:"#64748b",marginBottom:20}}>NCCT is mandatory. CTA/MRA required for LVO assessment.</p>
+
+      {/* ICH */}
       <Card color={ich===true?"red":ich===false?"green":"blue"}>
         <Label>NCCT: intracerebral hemorrhage present?</Label>
         <div style={{display:"flex",gap:10}}>
@@ -183,28 +518,85 @@ function Step4({data,set,next,back}){
         </div>
         {ich===true&&<p style={{marginTop:10,fontSize:12,color:"#991b1b",fontWeight:600}}>ICH confirmed — IV thrombolysis absolutely contraindicated. Manage as hemorrhagic stroke.</p>}
       </Card>
+
       {ich===false&&<>
-        <Card color="blue">
-          <Label>ASPECTS score (0–10)</Label>
-          <Input type="number" min="0" max="10" value={aspects} placeholder="Enter ASPECTS"
-            onChange={e=>{setAspects(e.target.value);set({...data,aspects:parseInt(e.target.value)||0})}}/>
-          {aspects&&<p style={{marginTop:6,fontSize:11.5,fontWeight:600,color:parseInt(aspects)>=6?"#166534":parseInt(aspects)>=3?"#854F0B":"#991b1b"}}>
-            {parseInt(aspects)>=7?"ASPECTS ≥7 — small or no ischemic core":parseInt(aspects)>=3?"ASPECTS 3–5 — large core (MT may still benefit within 24 h)":"ASPECTS 0–2 — very large core; poor prognosis with or without treatment"}
-          </p>}
-        </Card>
+        {/* LVO */}
         <Card color="blue">
           <Label>CTA/MRA: large vessel occlusion (LVO) identified?</Label>
           <div style={{display:"flex",gap:10,marginBottom:8}}>
             <Btn onClick={()=>{setLvo(true);set({...data,lvo:true})}} variant={lvo===true?"primary":"outline"}>Yes — LVO</Btn>
             <Btn onClick={()=>{setLvo(false);set({...data,lvo:false})}} variant={lvo===false?"primary":"outline"}>No LVO</Btn>
           </div>
-          {lvo===true&&<p style={{fontSize:11.5,color:"#166534",fontWeight:600}}>LVO confirmed — assess MT eligibility based on time window and imaging.</p>}
-          {lvo===false&&<p style={{fontSize:11.5,color:"#854F0B",fontWeight:600}}>No LVO — MT not indicated. Proceed to antithrombotic therapy.</p>}
+          {lvo===true&&<>
+            <Label>Occlusion site</Label>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+              {[...anteriorSites,...posteriorSites].map(s=>{
+                const active=lvoSite===s;
+                return <button key={s} onClick={()=>{
+                  setLvoSite(s);
+                  const c=anteriorSites.includes(s)?"anterior":"posterior";
+                  setCirculation(c);
+                  set({...data,lvoSite:s,circulation:c});
+                }} style={{
+                  fontSize:10.5,padding:"5px 10px",borderRadius:5,cursor:"pointer",
+                  border:active?"1.5px solid #0C447C":"1px solid #cbd5e1",
+                  background:active?"#E6F1FB":"#fff",color:active?"#0C447C":"#475569",fontWeight:active?600:400
+                }}>{s}</button>;
+              })}
+            </div>
+            {circ&&<p style={{marginTop:6,fontSize:11,fontWeight:600,color:circ==="anterior"?"#0C447C":"#534AB7"}}>
+              {circ==="anterior"?"Anterior circulation — use ASPECTS":"Posterior circulation — use pc-ASPECTS"}
+            </p>}
+          </>}
+          {lvo===false&&<p style={{fontSize:11.5,color:"#854F0B",fontWeight:600}}>No LVO — MT not indicated. ASPECTS still required for prognostication.</p>}
         </Card>
+
+        {/* ASPECTS (anterior) */}
+        {(showAspects||(!circ&&ich===false))&&<Card color="blue">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <Label>ASPECTS score (0–10)</Label>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>setAspectsMode("manual")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:aspectsMode==="manual"?"1.5px solid #0C447C":"1px solid #cbd5e1",background:aspectsMode==="manual"?"#E6F1FB":"#fff",color:aspectsMode==="manual"?"#0C447C":"#64748b",cursor:"pointer",fontWeight:aspectsMode==="manual"?600:400}}>Enter manually</button>
+              <button onClick={()=>setAspectsMode("calc")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:aspectsMode==="calc"?"1.5px solid #0C447C":"1px solid #cbd5e1",background:aspectsMode==="calc"?"#E6F1FB":"#fff",color:aspectsMode==="calc"?"#0C447C":"#64748b",cursor:"pointer",fontWeight:aspectsMode==="calc"?600:400}}>Calculate ASPECTS</button>
+            </div>
+          </div>
+          {aspectsMode==="manual"&&<>
+            <Input type="number" min="0" max="10" value={aspects} placeholder="Enter ASPECTS"
+              onChange={e=>{setAspects(e.target.value);set({...data,aspects:parseInt(e.target.value)||0,aspectsRegions:undefined})}}/>
+            {aspects&&<p style={{marginTop:6,fontSize:11.5,fontWeight:600,color:parseInt(aspects)>=7?"#166534":parseInt(aspects)>=3?"#854F0B":"#991b1b"}}>
+              {parseInt(aspects)>=7?"ASPECTS ≥7 — small or no ischemic core":parseInt(aspects)>=3?"ASPECTS 3–5 — large core (MT may still benefit within 24 h)":"ASPECTS 0–2 — very large core; poor prognosis"}
+            </p>}
+          </>}
+          {aspectsMode==="calc"&&<div style={{borderTop:"1px solid #e2e8f0",paddingTop:10,marginTop:4}}>
+            <AspectsCalc affected={aspectsAffected} onToggle={toggleAspects} score={10-aspectsAffected.length}/>
+          </div>}
+        </Card>}
+
+        {/* pc-ASPECTS (posterior) */}
+        {showPcAspects&&<Card color="purple">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <Label>pc-ASPECTS score (0–10)</Label>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>setPcAspectsMode("manual")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:pcAspectsMode==="manual"?"1.5px solid #534AB7":"1px solid #cbd5e1",background:pcAspectsMode==="manual"?"#EEEDFE":"#fff",color:pcAspectsMode==="manual"?"#534AB7":"#64748b",cursor:"pointer",fontWeight:pcAspectsMode==="manual"?600:400}}>Enter manually</button>
+              <button onClick={()=>setPcAspectsMode("calc")} style={{fontSize:10,padding:"3px 8px",borderRadius:4,border:pcAspectsMode==="calc"?"1.5px solid #534AB7":"1px solid #cbd5e1",background:pcAspectsMode==="calc"?"#EEEDFE":"#fff",color:pcAspectsMode==="calc"?"#534AB7":"#64748b",cursor:"pointer",fontWeight:pcAspectsMode==="calc"?600:400}}>Calculate pc-ASPECTS</button>
+            </div>
+          </div>
+          {pcAspectsMode==="manual"&&<>
+            <Input type="number" min="0" max="10" value={pcAspects} placeholder="Enter pc-ASPECTS"
+              onChange={e=>{setPcAspects(e.target.value);set({...data,pcAspects:parseInt(e.target.value)||0,pcAspectsRegions:undefined})}}/>
+            {pcAspects&&<p style={{marginTop:6,fontSize:11.5,fontWeight:600,color:parseInt(pcAspects)>=8?"#166534":parseInt(pcAspects)>=6?"#854F0B":"#991b1b"}}>
+              {parseInt(pcAspects)>=8?"pc-ASPECTS ≥8 — favorable prognosis":parseInt(pcAspects)>=6?"pc-ASPECTS 6–7 — moderate ischemia; MT may be considered":"pc-ASPECTS < 6 — extensive ischemia; excluded from ATTENTION/BAOCHE trials"}
+            </p>}
+          </>}
+          {pcAspectsMode==="calc"&&<div style={{borderTop:"1px solid #e2e8f0",paddingTop:10,marginTop:4}}>
+            <PcAspectsCalc affected={pcAspectsAffected} onToggle={togglePcAspects} score={Math.max(0,10-pcAspectsAffected.reduce((a,r)=>a+(PC_POINTS[r]||0),0))}/>
+          </div>}
+        </Card>}
       </>}
+
       <div style={{display:"flex",gap:10,marginTop:16}}>
         <Btn onClick={back} variant="outline">← Back</Btn>
-        <Btn onClick={next} disabled={ich===undefined||ich===true||(ich===false&&(!aspects||lvo===undefined))}>Next →</Btn>
+        <Btn onClick={next} disabled={ich===undefined||ich===true||!canProceed}>Next →</Btn>
       </div>
     </div>
   );
@@ -241,11 +633,17 @@ function Step5({data,set,next,back}){
 function Step6({data,back,reset}){
   const h=data.lkwHours||0;
   const nihss=data.nihss||0;
-  const aspects=data.aspects||10;
+  const aspects=data.aspects!=null?data.aspects:10;
+  const pcAspects=data.pcAspects!=null?data.pcAspects:10;
   const lvo=data.lvo;
+  const lvoSite=data.lvoSite||"";
+  const circ=data.circulation||"anterior";
   const contra=data.contraindications||[];
   const glucose=data.glucose||5;
   const hasContra=contra.length>0;
+  const isPost=circ==="posterior";
+  const activeAspects=isPost?pcAspects:aspects;
+  const aspectsLabel=isPost?"pc-ASPECTS":"ASPECTS";
 
   const recs=[];
 
@@ -261,19 +659,35 @@ function Step6({data,back,reset}){
     recs.push({type:"warn",color:"red",title:"IV thrombolysis — contraindicated",body:`${contra.length} contraindication(s) identified:\n• ${contra.slice(0,3).join("\n• ")}${contra.length>3?`\n• ...and ${contra.length-3} more`:""}\n\nPatient may still be eligible for mechanical thrombectomy.`});
   }
 
-  // MT eligibility
-  if(lvo){
+  // MT eligibility — anterior circulation
+  if(lvo&&!isPost){
     if(aspects>=6&&h<=6){
-      recs.push({type:"primary",color:"purple",title:"Mechanical thrombectomy — strongly indicated (0–6 h)",body:"ASPECTS ≥6, LVO confirmed, within standard window.\n• Proceed to endovascular suite immediately\n• Can be performed concurrently with IV tPA workup (bridging strategy)\n• Post-MT BP target: SBP 140–180 mmHg\n• Evidence: MR CLEAN, ESCAPE, SWIFT PRIME, EXTEND-IA, THRACE"});
-    } else if(h>6&&h<=16){
-      recs.push({type:"primary",color:"purple",title:"Mechanical thrombectomy — extended window (6–16 h)",body:"Assess DEFUSE 3 or DAWN eligibility:\n• DEFUSE 3: CTP or MRP to confirm penumbra >1.8× core, core <70 mL\n• DAWN: CTP or MRI-DWI mismatch (deficit too large for core size)\n• If criteria met: proceed to MT\n• Post-MT BP target: SBP 140–180 mmHg"});
-    } else if(h>16&&h<=24){
-      recs.push({type:"primary",color:"purple",title:"Mechanical thrombectomy — late window (16–24 h)",body:"Assess DAWN eligibility only (DEFUSE 3 did not include >16 h):\n• Age ≥80: NIHSS ≥10, core <21 mL\n• Age <80: NIHSS ≥10, core <31 mL; or NIHSS ≥20, core <51 mL\n• CTP or MRI-DWI required\n• Post-MT BP target: SBP 140–180 mmHg"});
+      recs.push({type:"primary",color:"purple",title:`Mechanical thrombectomy — strongly indicated (0–6 h, ${lvoSite||"anterior LVO"})`,body:`ASPECTS ${aspects} (≥6), LVO confirmed, within standard window.\n• Proceed to endovascular suite immediately\n• Can be performed concurrently with IV tPA workup (bridging strategy)\n• Post-MT BP target: SBP 140–180 mmHg\n• Evidence: MR CLEAN, ESCAPE, SWIFT PRIME, EXTEND-IA, THRACE`});
+    } else if(aspects>=6&&h>6&&h<=16){
+      recs.push({type:"primary",color:"purple",title:`Mechanical thrombectomy — extended window (6–16 h, ${lvoSite||"anterior LVO"})`,body:`ASPECTS ${aspects} (≥6). Assess DEFUSE 3 or DAWN eligibility:\n• DEFUSE 3: CTP or MRP to confirm penumbra >1.8× core, core <70 mL\n• DAWN: CTP or MRI-DWI mismatch (deficit too large for core size)\n• If criteria met: proceed to MT\n• Post-MT BP target: SBP 140–180 mmHg`});
+    } else if(aspects>=6&&h>16&&h<=24){
+      recs.push({type:"primary",color:"purple",title:`Mechanical thrombectomy — late window (16–24 h, ${lvoSite||"anterior LVO"})`,body:`ASPECTS ${aspects} (≥6). Assess DAWN eligibility only (DEFUSE 3 did not include >16 h):\n• Age ≥80: NIHSS ≥10, core <21 mL\n• Age <80: NIHSS ≥10, core <31 mL; or NIHSS ≥20, core <51 mL\n• CTP or MRI-DWI required\n• Post-MT BP target: SBP 140–180 mmHg`});
     } else if(aspects>=3&&aspects<=5&&h<=24){
-      recs.push({type:"info",color:"amber",title:"Mechanical thrombectomy — large core (ASPECTS 3–5)",body:"Evidence from ANGEL-ASPECT, SELECT2, TENSION, LASTE (2023):\n• MT still shows benefit vs medical management alone\n• Most patients will remain functionally disabled (mRS 3–5)\n• Discuss prognosis with family before proceeding\n• No additional perfusion imaging required\n• Post-MT BP target: SBP 140–180 mmHg"});
+      recs.push({type:"info",color:"amber",title:`Mechanical thrombectomy — large core (ASPECTS ${aspects}, ${lvoSite||"anterior LVO"})`,body:`Evidence from ANGEL-ASPECT, SELECT2, TENSION, LASTE (2023):\n• MT still shows benefit vs medical management alone\n• Most patients will remain functionally disabled (mRS 3–5)\n• Discuss prognosis with family before proceeding\n• No additional perfusion imaging required\n• Post-MT BP target: SBP 140–180 mmHg`});
+    } else if(aspects<3){
+      recs.push({type:"warn",color:"red",title:`Mechanical thrombectomy — very large core (ASPECTS ${aspects})`,body:"ASPECTS 0–2 indicates very extensive ischemia.\n• Evidence for MT benefit is limited at this severity\n• Poor prognosis regardless of treatment\n• Discuss goals of care with patient/family"});
     }
-  } else if(lvo===false){
-    recs.push({type:"info",color:"green",title:"Mechanical thrombectomy — not indicated (no LVO)",body:"No large vessel occlusion identified.\n• If NIHSS ≤5: initiate DAPT (clopidogrel + aspirin) within 24 h\n• If NIHSS ≥6: initiate aspirin 300 mg loading dose\n• Investigate stroke etiology: echocardiogram, cardiac monitoring for AF, lipids, HbA1c"});
+  }
+
+  // MT eligibility — posterior circulation (basilar artery)
+  if(lvo&&isPost){
+    if(pcAspects>=6&&h<=12){
+      recs.push({type:"primary",color:"purple",title:`Mechanical thrombectomy — basilar artery occlusion (0–12 h)`,body:`pc-ASPECTS ${pcAspects} (≥6), basilar artery LVO, within ATTENTION trial window.\n• Proceed to endovascular suite\n• ATTENTION trial: mRS 0–3, 46% vs 23% (p<0.001)\n• BAOCHE trial (6–24 h): comparable benefit\n• Post-MT BP target: SBP 140–180 mmHg`});
+    } else if(pcAspects>=6&&h>12&&h<=24){
+      recs.push({type:"primary",color:"purple",title:`Mechanical thrombectomy — basilar artery occlusion (12–24 h)`,body:`pc-ASPECTS ${pcAspects} (≥6), basilar artery LVO, extended window.\n• Within BAOCHE trial window (6–24 h)\n• BAOCHE: mRS 0–3, 46% vs 24% (p<0.001)\n• Proceed to MT if criteria met\n• Post-MT BP target: SBP 140–180 mmHg`});
+    } else if(pcAspects<6){
+      recs.push({type:"warn",color:"red",title:`Mechanical thrombectomy — basilar (pc-ASPECTS ${pcAspects} < 6)`,body:"Both ATTENTION and BAOCHE excluded patients with pc-ASPECTS < 6.\n• Extensive posterior circulation ischemia\n• MT benefit not established at this severity\n• Consider goals-of-care discussion"});
+    }
+  }
+
+  // No LVO
+  if(lvo===false){
+    recs.push({type:"info",color:"green",title:"Mechanical thrombectomy — not indicated (no LVO)",body:`No large vessel occlusion identified. ${aspectsLabel} ${activeAspects}.\n• If NIHSS ≤5: initiate DAPT (clopidogrel + aspirin) within 24 h\n• If NIHSS ≥6: initiate aspirin 300 mg loading dose\n• Investigate stroke etiology: echocardiogram, cardiac monitoring for AF, lipids, HbA1c`});
   }
 
   // Antithrombotic fallback
@@ -292,14 +706,30 @@ function Step6({data,back,reset}){
 
       <div style={{background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:"10px 14px",marginBottom:16,fontSize:11}}>
         <b style={{color:"#334155"}}>Summary:</b>{" "}
-        <span style={{color:"#64748b"}}>LKW {h}h · NIHSS {nihss} · Glucose {glucose} mmol/L · ASPECTS {aspects} · LVO: {lvo?"Yes":"No"} · Contraindications: {contra.length}</span>
+        <span style={{color:"#64748b"}}>LKW {h}h · NIHSS {nihss} · Glucose {glucose} mmol/L · {isPost?`pc-ASPECTS ${pcAspects}`:`ASPECTS ${aspects}`}{lvoSite?` · ${lvoSite}`:""} · LVO: {lvo?"Yes":"No"} · Contraindications: {contra.length}</span>
+        {data.nihssScores&&<details style={{marginTop:6}}>
+          <summary style={{cursor:"pointer",fontSize:10,color:"#0C447C",fontWeight:600}}>View NIHSS breakdown</summary>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"2px 12px",marginTop:6,fontSize:10,color:"#64748b"}}>
+            {Object.entries(data.nihssScores).map(([k,v])=>(
+              <span key={k}>{k}: <b style={{color:"#334155"}}>{v}</b></span>
+            ))}
+          </div>
+        </details>}
+        {data.aspectsRegions&&data.aspectsRegions.length>0&&<details style={{marginTop:4}}>
+          <summary style={{cursor:"pointer",fontSize:10,color:"#0C447C",fontWeight:600}}>View ASPECTS breakdown</summary>
+          <p style={{marginTop:4,fontSize:10,color:"#64748b"}}>Affected regions: <b style={{color:"#991b1b"}}>{data.aspectsRegions.join(", ")}</b> → ASPECTS {aspects}/10</p>
+        </details>}
+        {data.pcAspectsRegions&&data.pcAspectsRegions.length>0&&<details style={{marginTop:4}}>
+          <summary style={{cursor:"pointer",fontSize:10,color:"#534AB7",fontWeight:600}}>View pc-ASPECTS breakdown</summary>
+          <p style={{marginTop:4,fontSize:10,color:"#64748b"}}>Affected regions: <b style={{color:"#991b1b"}}>{data.pcAspectsRegions.map(r=>r==="LTh"?"L.Thalamus":r==="RTh"?"R.Thalamus":r==="LOc"?"L.Occipital":r==="ROc"?"R.Occipital":r==="LCb"?"L.Cerebellum":r==="RCb"?"R.Cerebellum":r).join(", ")}</b> → pc-ASPECTS {pcAspects}/10</p>
+        </details>}
       </div>
 
       {recs.map((r,i)=>(
         <div key={i} style={{background:bgColors[r.color],border:`1.5px solid ${bdColors[r.color]}`,borderRadius:8,padding:"14px 16px",marginBottom:12}}>
           <p style={{fontSize:13,fontWeight:700,color:typeColors[r.type]||bdColors[r.color],marginBottom:8}}>{r.title}</p>
           {r.body.split("\n").map((line,j)=>(
-            <p key={j} style={{fontSize:11.5,color:"#334155",marginBottom:3,paddingLeft:line.startsWith("•")?"0":"0"}}>{line}</p>
+            <p key={j} style={{fontSize:11.5,color:"#334155",marginBottom:3}}>{line}</p>
           ))}
         </div>
       ))}
